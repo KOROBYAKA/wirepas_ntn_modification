@@ -19,15 +19,19 @@ services:
   transport-service:
     image: wirepas/gateway_transport_service:${GATEWAY_TAG:-latest}
     container_name: transport-service
+    extra_hosts:
+        - "host.docker.internal:host-gateway"
     environment:
       # To be modified
-      WM_GW_ID:
-      WM_GW_MODEL:
-      WM_GW_VERSION:
-      WM_SERVICES_MQTT_HOSTNAME:
-      WM_SERVICES_MQTT_PORT:
+      WM_GW_ID: local-gateway
+      WM_GW_MODEL: dev
+      WM_GW_VERSION: "1"
+
+      WM_SERVICES_MQTT_HOSTNAME: host.docker.internal
+      WM_SERVICES_MQTT_PORT: 1883
       WM_SERVICES_MQTT_USERNAME:
       WM_SERVICES_MQTT_PASSWORD:
+      WM_SERVICES_MQTT_FORCE_UNSECURE: "true"
     restart: always
     depends_on:
       - dbus-service
@@ -47,10 +51,10 @@ services:
       - dbus-service
     devices:
       # To be modified
-      - <path to from_host>:/dev/mysink
+      - /dev/ttyACM0:/dev/mysink
     environment:
-      WM_GW_SINK_BAUDRATE:
-      WM_GW_SINK_ID:
+      WM_GW_SINK_BAUDRATE: 125000
+      WM_GW_SINK_ID: 1
       # Do not change (path of sink in container)
       WM_GW_SINK_UART_PORT: /dev/mysink
     volumes:
@@ -59,3 +63,45 @@ services:
         target: /var/run/dbus
     logging:
       driver: journald
+
+  sink-configurator:
+    image: wirepas/gateway_transport_service:${GATEWAY_TAG:-latest}
+    container_name: sink-configurator
+
+    depends_on:
+      - dbus-service
+      - sink-service
+
+    environment:
+      WM_CN_SINK_ID: sink1
+      WM_CN_NODE_ADDRESS: "0x000001"
+      WM_CN_NETWORK_ADDRESS: "0xD8D42B"
+      WM_CN_NETWORK_CHANNEL: "9"
+      WM_CN_NODE_ROLE: "sink csma-ca"
+      WM_CN_START_SINK: "true"
+
+    volumes:
+      - type: volume
+        source: dbus-volume
+        target: /var/run/dbus
+
+    entrypoint: ["/bin/sh", "-c"]
+
+    command:
+      - |
+        set -e
+  
+        echo "Waiting for sink1 on D-Bus..."
+  
+        until wm-node-conf list 2>/dev/null | grep -q '\[sink1\]'; do
+          echo "sink1 not ready yet"
+          sleep 1
+        done
+  
+        echo "sink1 found, applying configuration..."
+  
+        wm-node-conf set
+  
+        echo "Sink configuration completed."
+
+    restart: "no"

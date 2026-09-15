@@ -26,11 +26,11 @@ services:
       WM_GW_VERSION: 
       # Ignore packets for given destination endpoints
       WM_GW_IGNORED_ENDPOINTS_FILTER: 
-      WM_SERVICES_MQTT_HOSTNAME: 
-      WM_SERVICES_MQTT_PORT: 
-      WM_SERVICES_MQTT_USERNAME: 
-      WM_SERVICES_MQTT_PASSWORD: 
-      WM_SERVICES_MQTT_FORCE_UNSECURE: 
+      WM_SERVICES_MQTT_HOSTNAME: localhost
+      WM_SERVICES_MQTT_PORT: 1883
+      WM_SERVICES_MQTT_USERNAME: wirepas
+      WM_SERVICES_MQTT_PASSWORD: wirepas
+      WM_SERVICES_MQTT_FORCE_UNSECURE: true
     restart: always
     depends_on:
       - dbus-service
@@ -74,7 +74,7 @@ services:
       - dbus-service
     devices:
       # To be modified
-      - <path to from_host>:/dev/mysink
+      - /dev/ttyACM0:/dev/mysink
     environment:
       WM_GW_SINK_BAUDRATE:
       WM_GW_SINK_ID:
