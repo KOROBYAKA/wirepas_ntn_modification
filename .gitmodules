@@ -1,3 +1,4 @@
 [submodule "ntn_module"]
 	path = ntn_module
 	url = git@github.com:KOROBYAKA/ntn_poc.git
+	branch = wirepas_dbus_integration
